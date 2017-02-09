@@ -105,6 +105,20 @@ mySecond <- list(mySecond[hour >= 21],
                  mySecond[id %between% c(93601,day_end_id)]) %>%
   rbindlist() %>% updateF(.)
 
+temp <- dt[,unique(TradingDay)]
+mySecondTD <- lapply(1:length(temp), function(i){
+  y <- data.table(TradingDay = temp[i],
+                  UpdateTime = mySecond[,UpdateTime])
+  return(y)
+}) %>% rbindlist() %>% .[order(TradingDay)]
+
+temp <- ChinaFuturesCalendar[days %between% c(as.Date(startDate, '%Y%m%d'),
+                                              as.Date(endDate, '%Y%m%d'))]
+
+mySecondTD <- merge(mySecondTD,temp, by.x = 'TradingDay', by.y = 'days') %>% 
+  .[!(is.na(nights) & (!UpdateTime %between% c("08:55:00","15:30:00")))]
+setcolorder(mySecondTD, c('TradingDay', 'nights', 'UpdateTime'))
+
 ################################################################################
 ## 填充数据
 ## 因为 Tick Data 经常会出现断点，

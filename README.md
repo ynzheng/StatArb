@@ -1,1 +1,3 @@
 # StatArb
+
+> Statistical Arbitrage Project

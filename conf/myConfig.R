@@ -195,6 +195,7 @@ priceComplement <- function(i, info){
     .[UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
         ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], days]] %>% 
     .[!is.na(Sector)]
+  setcolorder(temp, c('TradingDay','UpdateTime',colnames(temp)[3:ncol(temp)]))
   
   return(temp)
 }

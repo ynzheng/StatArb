@@ -103,7 +103,8 @@ mySecond <- list(mySecond[hour >= 21],
                  mySecond[id %between% c(0, night_end_id)],
                  mySecond[id %between% c(64801,82800)],
                  mySecond[id %between% c(93601,day_end_id)]) %>%
-  rbindlist() %>% updateF(.)
+  rbindlist() %>% updateF(.) %>% 
+  .[,.(UpdateTime)]
 
 temp <- dt[,unique(TradingDay)]
 mySecondTD <- lapply(1:length(temp), function(i){

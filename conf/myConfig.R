@@ -207,3 +207,5 @@ priceComplement <- function(i, info){
 mainInfo    <- lapply(1:nrow(mainContract), priceComplement, 'main') %>% rbindlist()
 forwardInfo <- lapply(1:nrow(mainContract), priceComplement, 'forward') %>% rbindlist()
 
+
+

@@ -144,24 +144,61 @@ return x;
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 addMissingData <- function(x){
-  temp <- merge(mySecond, x, by = c("UpdateTime"), all = TRUE) %>%
-    .[!duplicated(id)]
+  temp <- merge(mySecond, x, by = c("UpdateTime"), all.x=TRUE)
   
   temp <- list(temp[UpdateTime >= "21:00:00"], temp[UpdateTime < "21:00:00"]) %>%
     rbindlist()
   
   cols <- c("Volume", "Turnover", "BidPrice1", "AskPrice1")
+  
   temp[, (cols) := lapply(.SD, na_convert), .SDcol = cols]
   
-  temp <- temp  %>%
+  temp <- temp %>%
     .[is.na(LastPrice), LastPrice := (BidPrice1 + AskPrice1)/2] %>%   ##-- LastPrice = (bid+ask)/2
     .[is.na(DeltaVolume), ":="(
       DeltaVolume = 0,
       DeltaTurnover = 0
-    )]
+    )] %>% 
+    .[,.SD[1:2], by = 'UpdateTime']
   
   return(temp)
 }
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+################################################################################
+## 针对每一个交易日
+## 需要填充缺失的 Tick Data：
+## 1. BidPrice1
+## 2. AskPrice1
+################################################################################
+
+for(i in 1:nrow(mainContract)){
+  mainInfo    <- dt[TradingDay == dt[,unique(TradingDay)][i] &
+                   InstrumentID == mainContract[i,Main_contract]
+                   ] %>% addMissingData() %>% 
+    .[,":="(TradingDay = dt[,unique(TradingDay)][i],
+            InstrumentID = mainContract[i,Main_contract])] %>% 
+    .[!UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
+        ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], nights]] %>% 
+    .[UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
+        ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], days]] %>% 
+    .[!is.na(Sector)]
+    
+  
+  forwardInfo <- dt[TradingDay == dt[,unique(TradingDay)][i] &
+                    InstrumentID == mainContract[i,forward_contract]
+                   ] %>% addMissingData(.) %>% 
+    .[,":="(TradingDay = dt[,unique(TradingDay)][i],
+            InstrumentID = mainContract[i,forward_contract])] %>% 
+    .[!UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
+        ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], nights]] %>% 
+    .[UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
+        ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], days]] %>% 
+    .[!is.na(Sector)]
+  
+  
+}
+
+
 
 

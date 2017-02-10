@@ -209,4 +209,13 @@ mainInfo    <- lapply(1:nrow(mainContract), priceComplement, 'main') %>% rbindli
 forwardInfo <- lapply(1:nrow(mainContract), priceComplement, 'forward') %>% rbindlist()
 
 
+################################################################################
+## 保存数据为 .csv 格式
+## 1. ./output/mainInfo.csv
+## 2. ./output/forward.csv
+################################################################################
 
+#----------------------------------------------
+# fwrite(mainInfo,'./output/mainInfo.csv')
+# fwrite(forwardInfo,'./output/forwardInfo.csv')
+#----------------------------------------------

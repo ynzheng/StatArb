@@ -171,34 +171,38 @@ addMissingData <- function(x){
 ## 1. BidPrice1
 ## 2. AskPrice1
 ################################################################################
-
-for(i in 1:nrow(mainContract)){
-  mainInfo    <- dt[TradingDay == dt[,unique(TradingDay)][i] &
-                   InstrumentID == mainContract[i,Main_contract]
-                   ] %>% addMissingData() %>% 
-    .[,":="(TradingDay = dt[,unique(TradingDay)][i],
-            InstrumentID = mainContract[i,Main_contract])] %>% 
+priceComplement <- function(i, info){
+  if(info == "main"){
+    ## 如果是主力合约
+    temp <- dt[TradingDay == dt[,unique(TradingDay)][i] &
+                 InstrumentID == mainContract[i,Main_contract]
+               ] %>% addMissingData() %>% 
+      .[,":="(TradingDay = dt[,unique(TradingDay)][i],
+              InstrumentID = mainContract[i,Main_contract])] 
+  }else{
+    ## 如果是远期合约
+    temp <- dt[TradingDay == dt[,unique(TradingDay)][i] &
+                 InstrumentID == mainContract[i,forward_contract]
+               ] %>% addMissingData() %>% 
+      .[,":="(TradingDay = dt[,unique(TradingDay)][i],
+              InstrumentID = mainContract[i,forward_contract])] 
+  }
+  
+  temp <- temp %>% 
     .[!UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
         ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], nights]] %>% 
     .[UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
         ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], days]] %>% 
     .[!is.na(Sector)]
-    
   
-  forwardInfo <- dt[TradingDay == dt[,unique(TradingDay)][i] &
-                    InstrumentID == mainContract[i,forward_contract]
-                   ] %>% addMissingData(.) %>% 
-    .[,":="(TradingDay = dt[,unique(TradingDay)][i],
-            InstrumentID = mainContract[i,forward_contract])] %>% 
-    .[!UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
-        ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], nights]] %>% 
-    .[UpdateTime %between% c("09:00:00", "14:59:59"), Sector := 
-        ChinaFuturesCalendar[days == dt[,unique(TradingDay)][i], days]] %>% 
-    .[!is.na(Sector)]
-  
-  
+  return(temp)
 }
+  
+#for(i in 1:nrow(mainContract)){
+#  mainInfo    <- priceComplement(i, info = 'main')
+#  forwardInfo <- priceComplement(i, info = 'forward')
+#}
 
-
-
+mainInfo    <- lapply(1:nrow(mainContract), priceComplement, 'main') %>% rbindlist()
+forwardInfo <- lapply(1:nrow(mainContract), priceComplement, 'forward') %>% rbindlist()
 
